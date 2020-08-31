@@ -95,7 +95,6 @@ composer_lock_parse_error=$(
 # a bunch of sanity checks first
 if [[ -s "$COMPOSER" ]]; then
 	cat "$COMPOSER" | python -mjson.tool &> /dev/null || {
-		mcount "failures.composer_json.lint"
 		error <<-EOF
 			Basic validation for '$COMPOSER' failed!
 			
@@ -113,7 +112,6 @@ if [[ -s "$COMPOSER" ]]; then
 	}
 	if [[ ! -f "$COMPOSER_LOCK" ]]; then
 		cat "$COMPOSER" | python -c 'import sys, json; sys.exit(bool(json.load(sys.stdin).get("require", {})))' 2> /dev/null || {
-			mcount "failures.composer_lock.missing"
 			error <<-EOF
 				No '$COMPOSER_LOCK' found!
 				
@@ -145,13 +143,11 @@ if [[ -s "$COMPOSER" ]]; then
 		}
 	else
 		cat "$COMPOSER_LOCK" | python -mjson.tool &> /dev/null || {
-			mcount "failures.composer_lock.lint"
 			error "$composer_lock_parse_error"
 		}
 	fi
 else
 	if [[ ! -f "$COMPOSER" ]]; then
-		mcount "warnings.composer_json.missing"
 		warning <<-EOF
 			No '$COMPOSER' found!
 			
@@ -171,7 +167,6 @@ else
 			https://devcenter.heroku.com/articles/getting-started-with-php
 		EOF
 	else
-		mcount "warnings.composer_json.empty"
 		notice <<-EOF
 			Your '$COMPOSER' is completely empty!
 			
@@ -219,7 +214,6 @@ mkdir -p $build_dir/.heroku/php-min
 ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
 
 curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/php-min.tar.gz "${s3_url}php-min-7.3.21.tar.gz" || {
-	mcount "failures.bootstrap.download.php-min"
 	error <<-EOF
 		Failed to download minimal PHP for bootstrapping!
 		
@@ -232,7 +226,6 @@ tar xzf $build_dir/.heroku/php-min.tar.gz -C $build_dir/.heroku/php-min
 rm $build_dir/.heroku/php-min.tar.gz
 
 curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/composer.tar.gz "${s3_url}composer-1.10.10.tar.gz" || {
-	mcount "failures.bootstrap.download.composer"
 	error <<-EOF
 		Failed to download Composer for bootstrapping!
 		
@@ -277,7 +270,6 @@ echo 'export COMPOSER_PROCESS_TIMEOUT=${COMPOSER_PROCESS_TIMEOUT:-0}' >> $build_
 # we perform this check early so people with stale lock files are reminded why if their lock file errors in the next step
 composer_lock_outdated=false
 composer validate --no-plugins --no-check-publish --no-check-all --quiet "$COMPOSER" 2>/dev/null || {
-	mcount "warnings.composer_lock.outdated"
 	composer_lock_outdated=true
 	warning <<-EOF
 		Your '$COMPOSER_LOCK' is out of date!
@@ -323,7 +315,6 @@ composer validate --no-plugins --no-check-publish --no-check-all --quiet "$COMPO
 			possible_stabilities="release candidate"
 			;;
 	esac
-	mcount "warnings.composer_lock.minimum_stability"
 	warning <<-EOF
 		Non-stable 'minimum-stability'!
 	
@@ -362,7 +353,6 @@ export HEROKU_PHP_DEFAULT_RUNTIME_VERSION
 /app/.heroku/php-min/bin/php $bp_dir/bin/util/platform.php "$bp_dir/support/installer/" $HEROKU_PHP_PLATFORM_REPOSITORIES 2>&1 >$build_dir/.heroku/php/composer.json | indent || {
 	code=$?
 	if [[ $code -eq 3 ]]; then
-		mcount "failures.platform.composer_lock.runtime_only_in_dev"
 		error <<-EOF
 			Runtime specified in 'require-dev' but not in 'require'!
 			
@@ -386,7 +376,6 @@ export HEROKU_PHP_DEFAULT_RUNTIME_VERSION
 			https://devcenter.heroku.com/articles/php-support
 		EOF
 	else
-		mcount "failures.platform.composer_lock.parse"
 		error "$composer_lock_parse_error"
 	fi
 }
@@ -416,10 +405,8 @@ else
 	)
 	if [[ $code -eq 2 ]]; then
 		# dependency solving failed
-		mcount "failures.platform.solving.$(detect_platform_solving_failures <<< "$install_log")"
 	else
 		# something else
-		mcount "failures.platform.install.$(detect_platform_install_failures <<< "$install_log")"
 	fi
 	
 	error <<-EOF
@@ -515,7 +502,6 @@ composer() {
 export -f composer
 
 # log runtime version
-mcount "platform.packages.php.$($engine_r "echo ${engine^^}_VERSION;")"
 
 if eoldate=$($engine $bp_dir/bin/util/eol.php); then
 	:
@@ -535,7 +521,6 @@ else
 		EOF
 	)
 	if (( $code == 2 )); then
-		mcount "warnings.runtime_eol.eol_reached"
 		warning <<-EOF
 			Your selected PHP version has reached end-of-life
 			
@@ -545,7 +530,6 @@ else
 			$eolmsg
 		EOF
 	elif (( $code == 3 )); then
-		mcount "warnings.runtime_eol.eol_close"
 		warning <<-EOF
 			Your selected PHP version is close to end-of-life
 			
@@ -555,7 +539,6 @@ else
 			$eolmsg
 		EOF
 	elif (( $code == 4 )); then
-		mcount "warnings.runtime_eol.eom_reached"
 		warning <<-EOF
 			Your app's PHP version is no longer actively maintained
 			
@@ -565,7 +548,6 @@ else
 			$eolmsg
 		EOF
 	elif (( $code == 5 )); then
-		mcount "warnings.runtime_eol.eom_close"
 		warning <<-EOF
 			Your app's PHP version is close to end of maintenance
 			
@@ -586,7 +568,6 @@ composer --no-plugins --version 2> /dev/null | tail -n 1 | indent
 # throw a notice if people have added their vendor dir to Git; that's bad practice and makes everything slow and cluttered
 if [[ -f "$composer_vendordir/autoload.php" && -d "$composer_vendordir/composer" ]]; then
 	# we should not do this check separately; there is no reliable way of telling whether or not it really is the real Composer bin dir or if it comes from somewhere else
-	mcount "warnings.vendor_dir"
 	warning <<-EOF
 		Composer vendor dir found in project!
 		
@@ -620,7 +601,6 @@ if [[ -n "$COMPOSER_GITHUB_OAUTH_TOKEN" ]]; then
 		composer config --no-plugins -g github-oauth.github.com "$COMPOSER_GITHUB_OAUTH_TOKEN" &> /dev/null # redirect outdated version warnings (Composer sends those to STDOUT instead of STDERR)
 		notice_inline 'Using $COMPOSER_GITHUB_OAUTH_TOKEN for GitHub OAuth.'
 	else
-		mcount "failures.dependencies.auth.COMPOSER_GITHUB_OAUTH_TOKEN"
 		error <<-EOF
 			Invalid token for GitHub OAuth!
 			
@@ -645,9 +625,7 @@ if cat "$COMPOSER" | python -c 'import sys,json; sys.exit(not json.load(sys.stdi
 		code=$?
 		if [[ $code -eq 2 ]]; then
 			# dependency solving failed, which should only ever happen if people have platform overrides in their config
-			mcount "failures.dependencies.solving.$(detect_dependencies_solving_failures < "$install_log")"
 		else
-			mcount "failures.dependencies.install.$(detect_dependencies_install_failures < "$install_log")"
 		fi
 		# FIXME: can we provide more advice depending on the error?
 		error <<-EOF
@@ -674,7 +652,6 @@ fi
 # only perform the check for buildpack package if we're not running in Heroku CI
 if [[ -z "${HEROKU_PHP_INSTALL_DEV+are-we-running-in-ci}" ]]; then
 	composer show --installed heroku/heroku-buildpack-php &> /dev/null && {
-		mcount "failures.dependencies.buildpack_as_dependency"
 		error <<-EOF
 			Package 'heroku/heroku-buildpack-php' found!
 			
@@ -700,7 +677,6 @@ mmeasure "dependencies.count" $(composer show --installed 2> /dev/null | wc -l)
 if cat "$COMPOSER" | python -c 'import sys,json; sys.exit("compile" not in json.load(sys.stdin).get("scripts", {}));'; then
 	status "Running 'composer compile'..."
 	composer run-script ${HEROKU_PHP_INSTALL_DEV-"--no-dev"} --no-interaction compile 2>&1 | indent || {
-		mcount "failures.compile_step"
 		error <<-EOF
 			Compile step failed!
 			

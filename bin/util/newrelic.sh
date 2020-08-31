@@ -8,7 +8,6 @@ install_newrelic_ext() {
 		if $engine -n $(which composer) require --update-no-dev -d "$build_dir/.heroku/php" -- "heroku-sys/ext-newrelic:*" >> $build_dir/.heroku/php/install.log 2>&1; then
 			echo "- New Relic detected, installed ext-newrelic" | indent
 		else
-			mcount "warnings.addons.newrelic.extension_missing"
 			warning_inline "New Relic detected, but no suitable extension available"
 		fi
 	fi
@@ -17,7 +16,6 @@ install_newrelic_ext() {
 install_newrelic_userini() {
 	if [[ "$engine" == "php" && -n "${NEW_RELIC_CONFIG_FILE:-}" ]]; then
 		if [[ ! -f "${NEW_RELIC_CONFIG_FILE}" ]]; then
-			mcount "failures.addons.newrelic.NEW_RELIC_CONFIG_FILE"
 			error <<-EOF
 				Config var 'NEW_RELIC_CONFIG_FILE' points to non existing file
 				'${NEW_RELIC_CONFIG_FILE}'
