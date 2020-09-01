@@ -29,8 +29,8 @@ export PATH=${OUT_PREFIX}/bin:$PATH
 # sqlite3 and pdo_sqlite are on by default but we're building them shared on purpose
 ./configure \
 	--prefix=${OUT_PREFIX} \
-	--with-config-file-path=/app/.heroku/php-min/etc/php \
-	--with-config-file-scan-dir=/app/.heroku/php-min/etc/php/conf.d \
+	--with-config-file-path=/etc/php.ini \
+	--with-config-file-scan-dir=/etc/php.d \
 	--enable-static \
 	--disable-phpdbg \
 	--disable-cgi \
