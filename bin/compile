@@ -384,11 +384,11 @@ else
 			-e "s#(${COMPOSER}/${COMPOSER_LOCK}) dev-[0-9a-f]+#\1#" \
 			-e 's/^/> /'
 	)
-	if [[ $code -eq 2 ]]; then
-		# dependency solving failed
-	else
-		# something else
-	fi
+	# if [[ $code -eq 2 ]]; then
+	# 	# dependency solving failed
+	# else
+	# 	# something else
+	# fi
 	
 	error <<-EOF
 		Failed to install system packages!
