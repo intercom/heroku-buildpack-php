@@ -213,7 +213,7 @@ s3_url="https://lang-php.s3.amazonaws.com/dist-cedar-14-stable/"
 mkdir -p $build_dir/.heroku/php-min
 ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
 
-curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/php-min.tar.gz "${s3_url}php-min-7.3.21.tar.gz" || {
+curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/php-min.tar.gz "https://muster-vendor.s3.amazonaws.com/buildpack/php-7.4.9.tar.gz" || {
 	error <<-EOF
                 ${s3_url}
 		Failed to download minimal PHP for bootstrapping!
