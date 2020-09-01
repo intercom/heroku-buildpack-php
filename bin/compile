@@ -196,18 +196,17 @@ mkdir -p $COMPOSER_HOME
 status "Bootstrapping..."
 
 s3_url="https://lang-php.s3.amazonaws.com/dist-cedar-14-stable/"
-HEROKU_PHP_PLATFORM_REPOSITORIES=""
 # prepend the default repo to the list configured by the user
 # list of repositories to use is in ascening order of precedence
-# export_env_dir "$env_dir" '^HEROKU_PHP_PLATFORM_REPOSITORIES$'
-# HEROKU_PHP_PLATFORM_REPOSITORIES="${s3_url} ${HEROKU_PHP_PLATFORM_REPOSITORIES:-}"
-# if [[ "${HEROKU_PHP_PLATFORM_REPOSITORIES}" == *" - "* ]]; then
-# 	# a single "-" in the user supplied string removes everything to the left of it; can be used to delete the default repo
-# 	notice_inline "Default platform repository disabled."
-# 	HEROKU_PHP_PLATFORM_REPOSITORIES=${HEROKU_PHP_PLATFORM_REPOSITORIES#*" - "}
-# 	s3_url=$(echo "$HEROKU_PHP_PLATFORM_REPOSITORIES" | cut -f1 -d" " | sed 's/[^/]*$//')
-# 	notice_inline "Bootstrapping using ${s3_url}..."
-# fi
+export_env_dir "$env_dir" '^HEROKU_PHP_PLATFORM_REPOSITORIES$'
+HEROKU_PHP_PLATFORM_REPOSITORIES="${s3_url} ${HEROKU_PHP_PLATFORM_REPOSITORIES:-}"
+if [[ "${HEROKU_PHP_PLATFORM_REPOSITORIES}" == *" - "* ]]; then
+	# a single "-" in the user supplied string removes everything to the left of it; can be used to delete the default repo
+	notice_inline "Default platform repository disabled."
+	HEROKU_PHP_PLATFORM_REPOSITORIES=${HEROKU_PHP_PLATFORM_REPOSITORIES#*" - "}
+	s3_url=$(echo "$HEROKU_PHP_PLATFORM_REPOSITORIES" | cut -f1 -d" " | sed 's/[^/]*$//')
+	notice_inline "Bootstrapping using ${s3_url}..."
+fi
 
 
 curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/composer.tar.gz "${s3_url}composer-1.10.10.tar.gz" || {
