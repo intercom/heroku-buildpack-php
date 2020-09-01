@@ -195,18 +195,18 @@ mkdir -p $COMPOSER_HOME
 
 status "Bootstrapping..."
 
-s3_url="https://lang-php.s3.amazonaws.com/dist-${STACK}-stable/"
+s3_url="https://lang-php.s3.amazonaws.com/dist-cedar-14-stable/"
 # prepend the default repo to the list configured by the user
 # list of repositories to use is in ascening order of precedence
-export_env_dir "$env_dir" '^HEROKU_PHP_PLATFORM_REPOSITORIES$'
-HEROKU_PHP_PLATFORM_REPOSITORIES="${s3_url} ${HEROKU_PHP_PLATFORM_REPOSITORIES:-}"
-if [[ "${HEROKU_PHP_PLATFORM_REPOSITORIES}" == *" - "* ]]; then
-	# a single "-" in the user supplied string removes everything to the left of it; can be used to delete the default repo
-	notice_inline "Default platform repository disabled."
-	HEROKU_PHP_PLATFORM_REPOSITORIES=${HEROKU_PHP_PLATFORM_REPOSITORIES#*" - "}
-	s3_url=$(echo "$HEROKU_PHP_PLATFORM_REPOSITORIES" | cut -f1 -d" " | sed 's/[^/]*$//')
-	notice_inline "Bootstrapping using ${s3_url}..."
-fi
+# export_env_dir "$env_dir" '^HEROKU_PHP_PLATFORM_REPOSITORIES$'
+# HEROKU_PHP_PLATFORM_REPOSITORIES="${s3_url} ${HEROKU_PHP_PLATFORM_REPOSITORIES:-}"
+# if [[ "${HEROKU_PHP_PLATFORM_REPOSITORIES}" == *" - "* ]]; then
+# 	# a single "-" in the user supplied string removes everything to the left of it; can be used to delete the default repo
+# 	notice_inline "Default platform repository disabled."
+# 	HEROKU_PHP_PLATFORM_REPOSITORIES=${HEROKU_PHP_PLATFORM_REPOSITORIES#*" - "}
+# 	s3_url=$(echo "$HEROKU_PHP_PLATFORM_REPOSITORIES" | cut -f1 -d" " | sed 's/[^/]*$//')
+# 	notice_inline "Bootstrapping using ${s3_url}..."
+# fi
 
 
 # minimal PHP needed for installs, and make "composer" invocations use that for now
@@ -215,6 +215,7 @@ ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
 
 curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/php-min.tar.gz "${s3_url}php-min-7.3.21.tar.gz" || {
 	error <<-EOF
+                ${s3_url}
 		Failed to download minimal PHP for bootstrapping!
 		
 		This is most likely a temporary internal error. If the problem
