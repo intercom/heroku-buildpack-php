@@ -209,23 +209,6 @@ s3_url="https://lang-php.s3.amazonaws.com/dist-cedar-14-stable/"
 # fi
 
 
-# minimal PHP needed for installs, and make "composer" invocations use that for now
-mkdir -p $build_dir/.heroku/php-min
-ln -s $build_dir/.heroku/php-min /app/.heroku/php-min
-
-curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/php-min.tar.gz "https://muster-vendor.s3.amazonaws.com/buildpack/php-7.4.9.tar.gz" || {
-	error <<-EOF
-                ${s3_url}
-		Failed to download minimal PHP for bootstrapping!
-		
-		This is most likely a temporary internal error. If the problem
-		persists, make sure that you are not running a custom or forked
-		version of the Heroku PHP buildpack which may need updating.
-	EOF
-}
-tar xzf $build_dir/.heroku/php-min.tar.gz -C $build_dir/.heroku/php-min
-rm $build_dir/.heroku/php-min.tar.gz
-
 curl_retry_on_18 --fail --silent --location -o $build_dir/.heroku/composer.tar.gz "${s3_url}composer-1.10.10.tar.gz" || {
 	error <<-EOF
 		Failed to download Composer for bootstrapping!
@@ -240,7 +223,7 @@ rm $build_dir/.heroku/composer.tar.gz
 
 # this alias is just for now while we install platform packages
 composer() {
-	/app/.heroku/php-min/bin/php /app/.heroku/php/bin/composer "$@"
+	/usr/bin/php /app/.heroku/php/bin/composer "$@"
 }
 export -f composer
 
@@ -351,7 +334,7 @@ else
 fi
 export HEROKU_PHP_DEFAULT_RUNTIME_VERSION
 # extract requirements from composer.lock
-/app/.heroku/php-min/bin/php $bp_dir/bin/util/platform.php "$bp_dir/support/installer/" $HEROKU_PHP_PLATFORM_REPOSITORIES 2>&1 >$build_dir/.heroku/php/composer.json | indent || {
+/usr/bin/php $bp_dir/bin/util/platform.php "$bp_dir/support/installer/" $HEROKU_PHP_PLATFORM_REPOSITORIES 2>&1 >$build_dir/.heroku/php/composer.json | indent || {
 	code=$?
 	if [[ $code -eq 3 ]]; then
 		error <<-EOF
@@ -487,7 +470,7 @@ export COMPOSER="$COMPOSER_bak"
 unset COMPOSER_bak
 
 # clean up
-rm -rf /app/.heroku/php-min $build_dir/.heroku/php-min
+#rm -rf /app/.heroku/php-min $build_dir/.heroku/php-min
 unset -f composer
 
 # export our "do not auto.start APM extensions" magic INI directory to PHP_INI_SCAN_DIR for ourself and for later buildpacks (but not for runtime)
